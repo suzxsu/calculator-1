@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Calculator from './Calculator';
+import { createPromiseClient } from "@connectrpc/connect";
 
 // 定义操作枚举(与组件内的枚举保持一致)
 enum Operation {
@@ -10,14 +11,28 @@ enum Operation {
   DIVIDE = 3
 }
 
-// 模拟全局 fetch API
-global.fetch = jest.fn();
+// 模拟ConnectRPC客户端
+jest.mock("@connectrpc/connect", () => ({
+  createPromiseClient: jest.fn(),
+}));
+
+jest.mock("@connectrpc/connect-web", () => ({
+  createConnectTransport: jest.fn(() => ({})),
+}));
 
 describe('Calculator Component', () => {
+  // 定义模拟客户端和计算方法
+  const mockCalculate = jest.fn();
+  
   // 在每个测试前重置模拟
   beforeEach(() => {
     jest.clearAllMocks();
-    (global.fetch as jest.Mock).mockReset();
+    mockCalculate.mockReset();
+    
+    // 设置模拟客户端
+    (createPromiseClient as jest.Mock).mockReturnValue({
+      calculate: mockCalculate
+    });
   });
 
   it('渲染计算器组件', () => {
@@ -50,9 +65,8 @@ describe('Calculator Component', () => {
 
   it('提交表单时调用计算服务', async () => {
     // 模拟成功响应
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ result: 8 }),
+    mockCalculate.mockResolvedValueOnce({
+      result: 8
     });
 
     render(<Calculator />);
@@ -65,22 +79,17 @@ describe('Calculator Component', () => {
     // 提交表单
     fireEvent.submit(screen.getByRole('button', { name: '计算' }));
     
-    // 验证调用了 fetch
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:8080/calculator.CalculatorService/Calculate',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
-        }),
-        body: JSON.stringify({
-          a: 5,
-          b: 3,
-          operation: Operation.ADD,
-        }),
-      })
-    );
+    // 验证调用了计算方法
+    await waitFor(() => {
+      expect(mockCalculate).toHaveBeenCalled();
+    });
+    
+    // 验证参数
+    expect(mockCalculate.mock.calls[0][0]).toMatchObject({
+      a: 5,
+      b: 3,
+      operation: Operation.ADD
+    });
     
     // 等待结果显示
     await waitFor(() => {
@@ -91,10 +100,7 @@ describe('Calculator Component', () => {
 
   it('处理计算错误', async () => {
     // 模拟错误响应
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ message: '除以零错误' }),
-    });
+    mockCalculate.mockRejectedValueOnce(new Error('除以零错误'));
 
     render(<Calculator />);
     
