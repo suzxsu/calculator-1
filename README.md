@@ -166,16 +166,6 @@ npm test
 npm run test:coverage
 ```
 
-## 实现细节
-
-### 后端实现
-
-后端使用标准的 Go HTTP 服务器，通过中间件处理 CORS 请求，并使用 ConnectRPC 处理计算请求。主要逻辑在 `service/calculator.go` 中实现。
-
-### 前端实现
-
-前端使用 React Hooks 管理状态和处理用户输入，通过标准的 Fetch API 与后端通信。UI 使用 Tailwind CSS 构建，具有响应式设计。
-
 ## 开发注意事项
 
 1. 后端服务需要允许跨域请求才能与前端通信
