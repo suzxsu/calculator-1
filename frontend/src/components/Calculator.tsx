@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { createConnectTransport } from "@connectrpc/connect-web";
+import { createPromiseClient } from "@connectrpc/connect";
+import { CalculatorService } from '../../gen/calculator/calculator_connect';
+import { CalculateRequest, CalculateResponse } from '../../gen/calculator/calculator_pb'; // 确保路径和导出正确
 
 // 定义操作枚举
 enum Operation {
@@ -42,39 +46,32 @@ export default function Calculator() {
     setLoading(true);
 
     try {
-      // 将输入值转换为数字
       const numA = parseFloat(a);
       const numB = parseFloat(b);
 
-      // 验证输入
       if (isNaN(numA) || isNaN(numB)) {
         throw new Error('请输入有效的数字');
       }
 
-      // 构建请求体
-      const requestBody = {
+      // 创建Connect传输层
+      const transport = createConnectTransport({
+        baseUrl: "http://localhost:8080",
+      });
+
+      // 使用 createPromiseClient 创建客户端实例
+      const client = createPromiseClient(CalculatorService, transport);
+
+      // 构造请求对象
+      const request = new CalculateRequest({
         a: numA,
         b: numB,
         operation: operation,
-      };
-
-      // 发送请求
-      const response = await fetch('http://localhost:8080/calculator.CalculatorService/Calculate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Connect-Protocol-Version': '1',
-        },
-        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '请求失败');
-      }
+      // 调用gRPC方法
+      const response: CalculateResponse = await client.calculate(request);
 
-      const data = await response.json();
-      setResult(data.result.toString());
+      setResult(response.result.toString());
     } catch (err) {
       console.error('计算错误:', err);
       setError(err instanceof Error ? err.message : '未知错误');
@@ -104,6 +101,7 @@ export default function Calculator() {
       <h1 className="text-2xl font-bold text-center mb-6">计算器</h1>
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* 输入框和操作选择 */}
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label htmlFor="a" className="block text-sm font-medium text-gray-700 mb-1">
@@ -179,4 +177,4 @@ export default function Calculator() {
       )}
     </div>
   );
-} 
+}
