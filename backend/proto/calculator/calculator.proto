@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "calculator/gen/proto/calculator";
+
+// CalculatorService 提供基本的计算功能
+service CalculatorService {
+  // Calculate 执行基本的数学运算（加、减、乘、除）
+  rpc Calculate(CalculateRequest) returns (CalculateResponse) {}
+}
+
+// CalculateRequest 包含要执行的操作
+message CalculateRequest {
+  double a = 1;
+  double b = 2;
+  Operation operation = 3;
+}
+
+// Operation 表示支持的数学运算
+enum Operation {
+  ADD = 0;
+  SUBTRACT = 1;
+  MULTIPLY = 2;
+  DIVIDE = 3;
+}
+
+// CalculateResponse 包含计算结果
+message CalculateResponse {
+  double result = 1;
+  string error = 2; // 在发生错误时使用（例如除以零）
+} 
