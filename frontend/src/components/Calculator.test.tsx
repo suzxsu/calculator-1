@@ -104,7 +104,7 @@ describe('Calculator Component', () => {
 
     render(<Calculator />);
     
-    // 填写表单 - 除以零场景
+    // 填写表单 除以零场景
     fireEvent.change(screen.getByLabelText('数值 A'), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText('数值 B'), { target: { value: '0' } });
     fireEvent.change(screen.getByLabelText('操作'), { target: { value: Operation.DIVIDE } });
