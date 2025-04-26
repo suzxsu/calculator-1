@@ -22,6 +22,10 @@ export default function Calculator() {
   const [result, setResult] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  // 新增状态保存显示在结果中的输入值
+  const [displayA, setDisplayA] = useState<string>('');
+  const [displayB, setDisplayB] = useState<string>('');
+  const [displayOperation, setDisplayOperation] = useState<Operation>(Operation.ADD);
 
   // 数值A输入处理
   const handleAChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,6 +56,11 @@ export default function Calculator() {
       if (isNaN(numA) || isNaN(numB)) {
         throw new Error('请输入有效的数字');
       }
+
+      // 保存当前输入值到显示状态
+      setDisplayA(a);
+      setDisplayB(b);
+      setDisplayOperation(operation);
 
       // 创建Connect传输层
       const transport = createConnectTransport({
@@ -158,12 +167,12 @@ export default function Calculator() {
         </button>
       </form>
 
-      {/* 显示结果 */}
+      {/* 显示结果 - 使用保存的显示值 */}
       {result && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
           <h2 className="text-lg font-medium text-green-800">计算结果</h2>
           <div className="mt-2 text-xl font-semibold">
-            {a} {getOperationSymbol(operation)} {b} = {result}
+            {displayA} {getOperationSymbol(displayOperation)} {displayB} = {result}
           </div>
         </div>
       )}
